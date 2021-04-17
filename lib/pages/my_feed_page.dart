@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:flutter_myinsta2/model/post_model.dart';
+import 'package:flutter_myinsta2/services/data_service.dart';
 
 class MyFeedPage extends StatefulWidget {
   PageController pageController;
@@ -12,15 +13,30 @@ class MyFeedPage extends StatefulWidget {
 
 class _MyFeedPageState extends State<MyFeedPage> {
   List<Post> items = new List();
-  String post_img1 = "https://firebasestorage.googleapis.com/v0/b/koreanguideway.appspot.com/o/develop%2Fpost.png?alt=media&token=f0b1ba56-4bf4-4df2-9f43-6b8665cdc964";
-  String post_img2 = "https://firebasestorage.googleapis.com/v0/b/koreanguideway.appspot.com/o/develop%2Fpost2.png?alt=media&token=ac0c131a-4e9e-40c0-a75a-88e586b28b72";
+  bool isLoading = false;
+
+
+  void _apiLoadFeeds(){
+    setState(() {
+      isLoading = true;
+    });
+    DataService.loadFeeds().then((value) => {
+      _resLoadFeeds(value),
+    });
+  }
+
+  void _resLoadFeeds(List<Post> posts) {
+    setState(() {
+      items = posts;
+      isLoading = false;
+    });
+  }
 
   @override
   void initState(){
     //  TODO: implement initState
     super.initState();
-    items.add(Post(postImage: post_img1,caption: "Discover more great images on our sponsor's site"));
-    items.add(Post(postImage: post_img2,caption: "Discover more great images on our sponsor's site"));
+    _apiLoadFeeds();
   }
 
   @override
@@ -39,7 +55,7 @@ class _MyFeedPageState extends State<MyFeedPage> {
         ),
         actions: [
           IconButton(
-              icon: Icon(Icons.camera_alt,color: Colors.black,),
+              icon: Icon(Icons.camera_alt,color: Color.fromRGBO(245,96,64,1),),
               onPressed: (){
                 widget.pageController.animateToPage(2,
                     duration: Duration(milliseconds: 200), curve: Curves.easeIn);
@@ -83,13 +99,13 @@ class _MyFeedPageState extends State<MyFeedPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Username",
+                            post.fullname,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, color: Colors.black
                             ),
                           ),
                           Text(
-                            "February 2, 2020",
+                            post.date,
                             style: TextStyle(
                                 fontWeight: FontWeight.normal
                             ),
@@ -108,9 +124,12 @@ class _MyFeedPageState extends State<MyFeedPage> {
           //#Image
           // Image.network(post.postImage,fit: BoxFit.cover,),
           CachedNetworkImage(
-            imageUrl: post.postImage,
-            placeholder: (context,url) => CircularProgressIndicator(),
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.width,
+            imageUrl: post.img_post,
+            placeholder: (context,url) => Center(child: CircularProgressIndicator(),),
             errorWidget: (context, url, error) => Icon(Icons.error),
+            fit: BoxFit.cover,
           ),
           //#Likeshare
           Row(
@@ -123,7 +142,7 @@ class _MyFeedPageState extends State<MyFeedPage> {
                       onPressed: null
                   ),
                   IconButton(
-                      icon: Icon(FontAwesome.send),
+                      icon: Icon(Icons.share),
                       onPressed: null
                   ),
                 ],

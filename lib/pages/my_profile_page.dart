@@ -21,20 +21,16 @@ class _MyProfilePageState extends State<MyProfilePage> {
   List<Post> items = new List();
   int axisCount = 1;
   String fullname = "", email = "", img_url = "";
-  String post_img1 = "https://firebasestorage.googleapis.com/v0/b/koreanguideway.appspot.com/o/develop%2Fpost.png?alt=media&token=f0b1ba56-4bf4-4df2-9f43-6b8665cdc964";
-  String post_img2 = "https://firebasestorage.googleapis.com/v0/b/koreanguideway.appspot.com/o/develop%2Fpost2.png?alt=media&token=ac0c131a-4e9e-40c0-a75a-88e586b28b72";
+  int count_posts = 0;
+
+
 
   @override
   void initState(){
     //  TODO: implement initState
     super.initState();
-    items.add(Post(postImage: post_img1,caption: "Discover more great images on our sponsor's site"));
-    items.add(Post(postImage: post_img2,caption: "Discover more great images on our sponsor's site"));
-    items.add(Post(postImage: post_img1,caption: "Discover more great images on our sponsor's site"));
-    items.add(Post(postImage: post_img2,caption: "Discover more great images on our sponsor's site"));
-    items.add(Post(postImage: post_img1,caption: "Discover more great images on our sponsor's site"));
-    items.add(Post(postImage: post_img2,caption: "Discover more great images on our sponsor's site"));
     _apiLoadUser();
+    _apiLoadPosts();
   }
 
   _imgFromGallery() async {
@@ -117,6 +113,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
       _showUserInfo(value),
     });
   }
+
   void _showUserInfo(User user) {
     setState(() {
       isLoading = false;
@@ -125,6 +122,20 @@ class _MyProfilePageState extends State<MyProfilePage> {
       this.img_url = user.img_url;
     });
   }
+
+  void _apiLoadPosts() {
+    DataService.loadPosts().then((value) => {
+      _resLoadPosts(value),
+    });
+  }
+
+  void _resLoadPosts(List<Post> posts) {
+    setState(() {
+      items = posts;
+      count_posts = items.length;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +154,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
         actions: [
           IconButton(
               icon: Icon(Icons.exit_to_app,),
-              color: Colors.black87,
+              color: Color.fromRGBO(245,96,64,1),
               onPressed: (){
                 AuthService.signOutUser(context);
               }
@@ -222,7 +233,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("675".toUpperCase(),style: TextStyle(color: Colors.black,fontSize: 16,fontWeight: FontWeight.bold),),
+                              Text(count_posts.toString(),style: TextStyle(color: Colors.black,fontSize: 16,fontWeight: FontWeight.bold),),
                               SizedBox(height: 3,),
                               Text("POSTS",style: TextStyle(color: Colors.black54,fontSize: 14,fontWeight: FontWeight.normal),),
                             ],
@@ -270,7 +281,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 axisCount = 1;
                               });
                             },
-                            icon: Icon(Icons.list),
+                            icon: Icon(Icons.list,color: Color.fromRGBO(245,96,64,1),),
                           ),
                         ),
                       ),
@@ -282,7 +293,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 axisCount = 2;
                               });
                             },
-                            icon: Icon(Icons.grid_on),
+                            icon: Icon(Icons.grid_on,color: Color.fromRGBO(245,96,64,1),),
                           ),
                         ),
                       ),
@@ -321,8 +332,8 @@ class _MyProfilePageState extends State<MyProfilePage> {
           Expanded(
               child:  CachedNetworkImage(
                 width: double.infinity,
-                imageUrl: post.postImage,
-                placeholder: (context, url) => CircularProgressIndicator(),
+                imageUrl: post.img_post,
+                placeholder: (context, url) => Center(child: CircularProgressIndicator(),),
                 errorWidget: (context, url,error) => Icon(Icons.error),
                 fit: BoxFit.cover,
               )
