@@ -144,7 +144,8 @@ class _MyProfilePageState extends State<MyProfilePage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Center(
+        title: Container(
+          margin: EdgeInsets.only(left: 160),
           child: Text(
             "Profile",
             style: TextStyle(

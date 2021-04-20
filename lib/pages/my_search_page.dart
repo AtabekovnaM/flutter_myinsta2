@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_myinsta2/model/user_model.dart';
 import 'package:flutter_myinsta2/services/data_service.dart';
 
+
 class MySearchPage extends StatefulWidget {
   @override
   _MySearchPageState createState() => _MySearchPageState();
 }
 
 class _MySearchPageState extends State<MySearchPage> {
+  bool isLoading = false;
   var searchController = TextEditingController();
   List<User> items = new List();
-  bool isLoading = false;
-
-
 
   void _apiSearchUsers(String keyword){
     setState(() {
@@ -30,6 +29,30 @@ class _MySearchPageState extends State<MySearchPage> {
     });
   }
 
+  void _apiFollowUser(User someone) async{
+    setState(() {
+      isLoading = true;
+    });
+    await DataService.followUser(someone);
+    setState(() {
+      someone.followed = true;
+      isLoading = false;
+    });
+    DataService.storePostsToMyFeed(someone);
+  }
+
+  void _apiUnfollowUser(User someone) async{
+    setState(() {
+      isLoading = true;
+    });
+    await DataService.unfollowUser(someone);
+    setState(() {
+      someone.followed = false;
+      isLoading = false;
+    });
+    DataService.removePostsFromMyFeed(someone);
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -40,74 +63,84 @@ class _MySearchPageState extends State<MySearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: Center(
-            child: Text(
-              "Search",
-              style: TextStyle(
-                  color: Colors.black,
-                  fontFamily: "Billabong",
-                  fontSize: 25
-              ),
-            ),
-          ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          "Search",
+          style: TextStyle(
+              color: Colors.black, fontFamily: 'Billabong', fontSize: 25),
         ),
-        body: Container(
-          padding: EdgeInsets.only(left: 20,right: 20),
-          child: Column(
-            children: [
-              //#Searchuser
-              Container(
-                padding: EdgeInsets.only(left: 10,right: 10),
-                margin: EdgeInsets.only(bottom: 10),
-                decoration: BoxDecoration(
+      ),
+
+      body: Stack(
+        children: [
+          Container(
+            padding: EdgeInsets.only(left: 20,right: 20),
+            child: Column(
+              children: [
+                //#searchuser
+                Container(
+                  margin: EdgeInsets.only(bottom: 10),
+                  padding: EdgeInsets.only(left: 10, right: 10),
+                  decoration: BoxDecoration(
                     color: Colors.grey.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(7)
-                ),
-                height: 45,
-                child: TextField(
-                  style: TextStyle(color: Colors.black87),
-                  controller: searchController,
-                  onChanged: (input){
-                    print(input);
-                    _apiSearchUsers(input);
-                  },
-                  decoration: InputDecoration(
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  height: 45,
+                  child: TextField(
+                    style: TextStyle(color: Colors.black87),
+                    controller: searchController,
+                    onChanged: (input){
+                      print(input);
+                      _apiSearchUsers(input);
+                    },
+                    decoration: InputDecoration(
                       hintText: "Search",
                       border: InputBorder.none,
-                      hintStyle: TextStyle(fontSize: 15.0,color: Colors.grey),
-                      icon: Icon(Icons.search, color: Colors.grey,)
+                      hintStyle: TextStyle(fontSize: 15.0, color: Colors.grey),
+                      icon: Icon(Icons.search, color: Colors.grey),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
+
+                Expanded(
                   child: ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (ctx,index){
-                        return _itemOfUser(items[index]);
-                      }
-                  )
-              ),
-            ],
+                    itemCount: items.length,
+                    itemBuilder: (ctx, index){
+                      return _itemOfUser(items[index]);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        )
+
+          isLoading
+              ? Center(
+            child: CircularProgressIndicator(),
+          )
+              : SizedBox.shrink(),
+        ],
+      ),
     );
   }
+
   Widget _itemOfUser(User user){
     return Container(
       height: 90,
       child: Row(
         children: [
+
           Container(
             padding: EdgeInsets.all(2),
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(70),
-                border: Border.all(
-                    width: 1.5,
-                    color: Color.fromRGBO(193, 53, 132, 1)
-                )
+              borderRadius: BorderRadius.circular(70),
+              border: Border.all(
+                width: 1.5,
+                color: Color.fromRGBO(193, 53, 132, 1),
+              ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(22.5),
@@ -116,16 +149,17 @@ class _MySearchPageState extends State<MySearchPage> {
                 width: 45,
                 height: 45,
                 fit: BoxFit.cover,
-              ) :
-              Image.network(
+              ): Image.network(
                 user.img_url,
                 width: 45,
                 height: 45,
                 fit: BoxFit.cover,
-            ),
+              ),
             ),
           ),
-          SizedBox(width: 15,),
+          SizedBox(
+            width: 15,
+          ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,34 +168,49 @@ class _MySearchPageState extends State<MySearchPage> {
                 user.fullname,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 3,),
+              SizedBox(
+                height: 3,
+              ),
               Text(
                 user.email,
                 style: TextStyle(color: Colors.black54),
               ),
             ],
           ),
+
           Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+
+                GestureDetector(
+                  onTap: (){
+                    if(user.followed){
+                      _apiUnfollowUser(user);
+                    }else{
+                      _apiFollowUser(user);
+                    }
+                  },
+                  child: Container(
                     width: 100,
                     height: 30,
                     decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(3),
-                        border: Border.all(
-                            width: 1,
-                            color: Colors.grey
-                        )
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(
+                        width: 1,
+                        color: Colors.grey,
+                      ),
                     ),
                     child: Center(
-                      child: Text("Follow"),
+                      child: user.followed ? Text("Following") : Text("Follow"),
                     ),
-                  )
-                ],
-              )
-          )
+                  ),
+                ),
+
+              ],
+            ),
+          ),
+
         ],
       ),
     );

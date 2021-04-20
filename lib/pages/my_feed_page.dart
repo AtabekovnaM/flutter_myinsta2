@@ -5,18 +5,19 @@ import 'package:flutter_myinsta2/model/post_model.dart';
 import 'package:flutter_myinsta2/services/data_service.dart';
 
 class MyFeedPage extends StatefulWidget {
+
   PageController pageController;
   MyFeedPage({this.pageController});
+
   @override
   _MyFeedPageState createState() => _MyFeedPageState();
 }
 
 class _MyFeedPageState extends State<MyFeedPage> {
-  List<Post> items = new List();
   bool isLoading = false;
+  List<Post> items = new List();
 
-
-  void _apiLoadFeeds(){
+  void _apiLoadFeeds() {
     setState(() {
       isLoading = true;
     });
@@ -32,9 +33,32 @@ class _MyFeedPageState extends State<MyFeedPage> {
     });
   }
 
+  void _apiPostLike(Post post) async {
+    setState(() {
+      isLoading = true;
+    });
+    await DataService.likePost(post, true);
+    setState(() {
+      isLoading = false;
+      post.liked = true;
+    });
+  }
+
+  void _apiPostUnLike(Post post) async {
+    setState(() {
+      isLoading = true;
+    });
+    await DataService.likePost(post, false);
+    setState(() {
+      isLoading = false;
+      post.liked = false;
+    });
+  }
+
+
   @override
-  void initState(){
-    //  TODO: implement initState
+  void initState() {
+    // TODO: implement initState
     super.initState();
     _apiLoadFeeds();
   }
@@ -46,111 +70,138 @@ class _MyFeedPageState extends State<MyFeedPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Container(
-          margin: EdgeInsets.only(left: 140),
-          child: Text(
-            "Instagram",
-            style: TextStyle(color: Colors.black,fontFamily: "Billabong",fontSize: 30),
-          ),
+        title: Text(
+          "Instagram",
+          style: TextStyle(
+              color: Colors.black, fontFamily: 'Billabong', fontSize: 30),
         ),
         actions: [
           IconButton(
-              icon: Icon(Icons.camera_alt,color: Color.fromRGBO(245,96,64,1),),
-              onPressed: (){
-                widget.pageController.animateToPage(2,
-                    duration: Duration(milliseconds: 200), curve: Curves.easeIn);
-              }
-          )
+            onPressed: (){
+              widget.pageController.animateToPage(2,
+                  duration: Duration(milliseconds: 200), curve: Curves.easeIn);
+            },
+            icon: Icon(Icons.camera_alt,color: Color.fromRGBO(193, 53, 132, 1),),
+          ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: items.length,
-        itemBuilder: (ctx,index){
-          return _itemsOfPost(items[index]);
-        },
+      body: Stack(
+        children: [
+          ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (ctx, index){
+              return _itemOfPost(items[index]);
+            },
+          ),
+
+          isLoading
+              ? Center(
+            child: CircularProgressIndicator(),
+          )
+              : SizedBox.shrink(),
+        ],
       ),
     );
   }
-  Widget _itemsOfPost(Post post){
+
+  Widget _itemOfPost(Post post){
+
     return Container(
       color: Colors.white,
       child: Column(
         children: [
+
           Divider(),
-          //#Userinfo
+          //userinfo
           Container(
-              padding: EdgeInsets.symmetric(horizontal: 10,vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(40),
-                        child: Image(
-                          image: AssetImage("assets/images/ic_person.png"),
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                        ),
+            padding: EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(40),
+                      child: (post.img_user == null || post.img_user.isEmpty)? Image(
+                        image: AssetImage("assets/images/ic_person.png"),
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ):Image.network(
+                        post.img_user,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
                       ),
-                      SizedBox(width: 10,),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post.fullname,
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, color: Colors.black
-                            ),
-                          ),
-                          Text(
-                            post.date,
-                            style: TextStyle(
-                                fontWeight: FontWeight.normal
-                            ),
-                          )
-                        ],
-                      )
-                    ],
-                  ),
-                  IconButton(
-                      icon: Icon(SimpleLineIcons.options),
-                      onPressed: (){}
-                  ),
-                ],
-              )
+                    ),
+                    SizedBox(width: 10,),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.fullname,
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                        Text(
+                          post.date,
+                          style: TextStyle(fontWeight: FontWeight.normal),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                post.mine ?
+                IconButton(
+                  icon: Icon(SimpleLineIcons.options),
+                  onPressed: () {
+
+                  },
+                ): SizedBox.shrink(),
+              ],
+            ),
           ),
-          //#Image
-          // Image.network(post.postImage,fit: BoxFit.cover,),
+          //#image
+          //Image.network(post.postImage, fit: BoxFit.cover),
+
           CachedNetworkImage(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.width,
             imageUrl: post.img_post,
-            placeholder: (context,url) => Center(child: CircularProgressIndicator(),),
-            errorWidget: (context, url, error) => Icon(Icons.error),
+            placeholder: (context, url) => Center(child: CircularProgressIndicator(),),
             fit: BoxFit.cover,
           ),
-          //#Likeshare
+
+          //#likeshare
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Row(
                 children: <Widget>[
                   IconButton(
-                      icon: Icon(FontAwesome.heart_o),
-                      onPressed: null
+                    onPressed: () {
+                      if (!post.liked) {
+                        _apiPostLike(post);
+                      } else {
+                        _apiPostUnLike(post);
+                      }
+                    },
+                    icon: post.liked
+                        ? Icon(
+                      FontAwesome.heart,
+                      color: Colors.red,
+                    )
+                        : Icon(FontAwesome.heart_o),
                   ),
                   IconButton(
-                      icon: Icon(Icons.share),
-                      onPressed: null
+                    onPressed: () {},
+                    icon: Icon(Icons.share),
                   ),
                 ],
-              )
+              ),
             ],
           ),
-
-          //  #caption
+          // #caption
           Container(
             width: MediaQuery.of(context).size.width,
             margin: EdgeInsets.only(left: 10, right: 10, bottom: 10),
@@ -158,15 +209,16 @@ class _MyFeedPageState extends State<MyFeedPage> {
               softWrap: true,
               overflow: TextOverflow.visible,
               text: TextSpan(
-                  children: [
-                    TextSpan(
-                        text: " ${post.caption}",
-                        style: TextStyle(color: Colors.black)
-                    )
-                  ]
+                children: [
+                  TextSpan(
+                    text: " ${post.caption}",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ],
               ),
             ),
-          )
+          ),
+
         ],
       ),
     );
