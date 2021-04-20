@@ -1,13 +1,13 @@
+
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_myinsta2/model/post_model.dart';
 import 'package:flutter_myinsta2/model/user_model.dart';
-import 'package:flutter_myinsta2/services/auth_service.dart';
 import 'package:flutter_myinsta2/services/data_service.dart';
 import 'package:flutter_myinsta2/services/file_service.dart';
+import 'package:flutter_myinsta2/services/utils_service.dart';
 import 'package:image_picker/image_picker.dart';
 
 class MyProfilePage extends StatefulWidget {
@@ -17,26 +17,15 @@ class MyProfilePage extends StatefulWidget {
 
 class _MyProfilePageState extends State<MyProfilePage> {
   bool isLoading = false;
-  File _image;
-  List<Post> items = new List();
   int axisCount = 1;
+  List<Post> items = new List();
+  File _image;
   String fullname = "", email = "", img_url = "";
-  int count_posts = 0;
-
-
-
-  @override
-  void initState(){
-    //  TODO: implement initState
-    super.initState();
-    _apiLoadUser();
-    _apiLoadPosts();
-  }
+  int count_posts = 0, count_followers = 0, count_following = 0;
 
   _imgFromGallery() async {
-    File image = await  ImagePicker.pickImage(
-        source: ImageSource.gallery, imageQuality: 50
-    );
+    File image = await ImagePicker.pickImage(
+        source: ImageSource.gallery, imageQuality: 50);
 
     setState(() {
       _image = image;
@@ -46,8 +35,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
 
   _imgFromCamera() async {
     File image = await ImagePicker.pickImage(
-        source: ImageSource.camera, imageQuality: 50
-    );
+        source: ImageSource.camera, imageQuality: 50);
 
     setState(() {
       _image = image;
@@ -56,11 +44,10 @@ class _MyProfilePageState extends State<MyProfilePage> {
   }
 
   void _apiChangePhoto() {
+    if (_image == null) return;
     setState(() {
       isLoading = true;
     });
-
-    if (_image == null) return;
 
     FileService.uploadUserImage(_image).then((downloadUrl) => {
       _apiUpdateUser(downloadUrl),
@@ -84,14 +71,14 @@ class _MyProfilePageState extends State<MyProfilePage> {
                 children: <Widget>[
                   new ListTile(
                       leading: new Icon(Icons.photo_library),
-                      title: new Text('Photo Library'),
+                      title: new Text('Pick Photo'),
                       onTap: () {
                         _imgFromGallery();
                         Navigator.of(context).pop();
                       }),
                   new ListTile(
                     leading: new Icon(Icons.photo_camera),
-                    title: new Text('Camera'),
+                    title: new Text('Take Photo'),
                     onTap: () {
                       _imgFromCamera();
                       Navigator.of(context).pop();
@@ -101,8 +88,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
               ),
             ),
           );
-        }
-    );
+        });
   }
 
   void _apiLoadUser() {
@@ -120,6 +106,8 @@ class _MyProfilePageState extends State<MyProfilePage> {
       this.fullname = user.fullname;
       this.email = user.email;
       this.img_url = user.img_url;
+      this.count_followers = user.followers_count;
+      this.count_following = user.following_count;
     });
   }
 
@@ -136,6 +124,14 @@ class _MyProfilePageState extends State<MyProfilePage> {
     });
   }
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    _apiLoadUser();
+    _apiLoadPosts();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,22 +140,19 @@ class _MyProfilePageState extends State<MyProfilePage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Container(
-          margin: EdgeInsets.only(left: 160),
-          child: Text(
-            "Profile",
-            style: TextStyle(
-                color: Colors.black, fontFamily: 'Billabong', fontSize: 25),
-          ),
+        title: Text(
+          "Profile",
+          style: TextStyle(
+              color: Colors.black, fontFamily: 'Billabong', fontSize: 25),
         ),
         actions: [
           IconButton(
-              icon: Icon(Icons.exit_to_app,),
-              color: Color.fromRGBO(245,96,64,1),
-              onPressed: (){
-                AuthService.signOutUser(context);
-              }
-          )
+            onPressed: () {
+
+            },
+            icon: Icon(Icons.exit_to_app),
+            color: Color.fromRGBO(193, 53, 132, 1),
+          ),
         ],
       ),
       body: Stack(
@@ -171,7 +164,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
               children: [
                 //#myphoto
                 GestureDetector(
-                  onTap: (){
+                  onTap: () {
                     _showPicker(context);
                   },
                   child: Stack(
@@ -179,11 +172,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       Container(
                         padding: EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(70),
-                            border: Border.all(
-                                width: 1.5,
-                                color: Color.fromRGBO(193, 53, 132, 1)
-                            )
+                          borderRadius: BorderRadius.circular(70),
+                          border: Border.all(
+                            width: 1.5,
+                            color: Color.fromRGBO(193, 53, 132, 1),
+                          ),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(35),
@@ -209,22 +202,38 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Icon(Icons.add_circle,color: Colors.purple,)
+                            Icon(
+                              Icons.add_circle,
+                              color: Colors.purple,
+                            ),
                           ],
                         ),
                       ),
-
                     ],
                   ),
                 ),
-
-                SizedBox(height: 10,),
-
-                //#Myinfos
-                Text(fullname.toUpperCase(),style: TextStyle(color: Colors.black,fontSize: 16,fontWeight: FontWeight.bold),),
-                SizedBox(height: 3,),
-                Text(email,style: TextStyle(color: Colors.black54,fontSize: 14,fontWeight: FontWeight.normal),),
-                //#Mycounts
+                //#myinfos
+                SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  fullname.toUpperCase(),
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+                SizedBox(
+                  height: 3,
+                ),
+                Text(
+                  email,
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal),
+                ),
+                //mycounts
                 Container(
                   height: 80,
                   child: Row(
@@ -234,35 +243,85 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(count_posts.toString(),style: TextStyle(color: Colors.black,fontSize: 16,fontWeight: FontWeight.bold),),
-                              SizedBox(height: 3,),
-                              Text("POSTS",style: TextStyle(color: Colors.black54,fontSize: 14,fontWeight: FontWeight.normal),),
+                              Text(
+                                count_posts.toString(),
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(
+                                height: 3,
+                              ),
+                              Text(
+                                "POSTS",
+                                style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal),
+                              ),
                             ],
                           ),
                         ),
                       ),
-                      Container(width: 1,height: 20,color: Colors.grey.withOpacity(0.5),),
+                      Container(
+                        width: 1,
+                        height: 20,
+                        color: Colors.grey.withOpacity(0.5),
+                      ),
                       Expanded(
                         child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("4,562".toUpperCase(),style: TextStyle(color: Colors.black,fontSize: 16,fontWeight: FontWeight.bold),),
-                              SizedBox(height: 3,),
-                              Text("FOLLOWERS",style: TextStyle(color: Colors.black54,fontSize: 14,fontWeight: FontWeight.normal),),
+                              Text(
+                                count_followers.toString(),
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(
+                                height: 3,
+                              ),
+                              Text(
+                                "FOLLOWERS",
+                                style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal),
+                              ),
                             ],
                           ),
                         ),
                       ),
-                      Container(width: 1,height: 20,color: Colors.grey.withOpacity(0.5),),
+                      Container(
+                        width: 1,
+                        height: 20,
+                        color: Colors.grey.withOpacity(0.5),
+                      ),
                       Expanded(
                         child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("897".toUpperCase(),style: TextStyle(color: Colors.black,fontSize: 16,fontWeight: FontWeight.bold),),
-                              SizedBox(height: 3,),
-                              Text("FOLLOWINGS",style: TextStyle(color: Colors.black54,fontSize: 14,fontWeight: FontWeight.normal),),
+                              Text(
+                                count_following.toString(),
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(
+                                height: 3,
+                              ),
+                              Text(
+                                "FOLLOWING",
+                                style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal),
+                              ),
                             ],
                           ),
                         ),
@@ -270,7 +329,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     ],
                   ),
                 ),
-
+                //listgrid
                 Container(
                   child: Row(
                     children: [
@@ -282,7 +341,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 axisCount = 1;
                               });
                             },
-                            icon: Icon(Icons.list,color: Color.fromRGBO(245,96,64,1),),
+                            icon: Icon(Icons.list),
                           ),
                         ),
                       ),
@@ -294,7 +353,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 axisCount = 2;
                               });
                             },
-                            icon: Icon(Icons.grid_on,color: Color.fromRGBO(245,96,64,1),),
+                            icon: Icon(Icons.grid_on),
                           ),
                         ),
                       ),
@@ -317,33 +376,42 @@ class _MyProfilePageState extends State<MyProfilePage> {
           ),
 
           isLoading
-          ? Center(
+              ? Center(
             child: CircularProgressIndicator(),
           )
               : SizedBox.shrink(),
         ],
-      )
+      ),
     );
   }
-  Widget _itemOfPost(Post post){
-    return Container(
-      margin: EdgeInsets.all(5),
-      child: Column(
-        children: [
-          Expanded(
-              child:  CachedNetworkImage(
-                width: double.infinity,
-                imageUrl: post.img_post,
-                placeholder: (context, url) => Center(child: CircularProgressIndicator(),),
-                errorWidget: (context, url,error) => Icon(Icons.error),
-                fit: BoxFit.cover,
-              )
-          ),
 
-          SizedBox(height: 3,),
-          Text(post.caption,style: TextStyle(color: Colors.black87.withOpacity(0.7)),maxLines: 2,)
-        ],
-      ),
+  Widget _itemOfPost(Post post) {
+    return GestureDetector(
+        onLongPress: (){
+        },
+        child: Container(
+          margin: EdgeInsets.all(5),
+          child: Column(
+            children: [
+              Expanded(
+                child: CachedNetworkImage(
+                  width: double.infinity,
+                  imageUrl: post.img_post,
+                  placeholder: (context, url) => Center(child: CircularProgressIndicator(),),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              SizedBox(
+                height: 3,
+              ),
+              Text(
+                post.caption,
+                style: TextStyle(color: Colors.black87.withOpacity(0.7)),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        )
     );
   }
 }
