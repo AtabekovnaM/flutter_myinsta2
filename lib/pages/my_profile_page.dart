@@ -1,10 +1,10 @@
-
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_myinsta2/model/post_model.dart';
 import 'package:flutter_myinsta2/model/user_model.dart';
+import 'package:flutter_myinsta2/services/auth_service.dart';
 import 'package:flutter_myinsta2/services/data_service.dart';
 import 'package:flutter_myinsta2/services/file_service.dart';
 import 'package:flutter_myinsta2/services/utils_service.dart';
@@ -124,6 +124,25 @@ class _MyProfilePageState extends State<MyProfilePage> {
     });
   }
 
+  _actionLogout() async{
+    var result = await Utils.dialogCommon(context, "Insta Clone", "Do you want to logout?", false);
+    if(result != null && result){
+      AuthService.signOutUser(context);
+    }
+  }
+
+  _actionRemovePost(Post post) async{
+    var result = await Utils.dialogCommon(context, "Insta Clone", "Do you want to remove this post?", false);
+    if(result != null && result){
+      setState(() {
+        isLoading = true;
+      });
+      DataService.removePost(post).then((value) => {
+        _apiLoadPosts(),
+      });
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -148,7 +167,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
         actions: [
           IconButton(
             onPressed: () {
-
+              _actionLogout();
             },
             icon: Icon(Icons.exit_to_app),
             color: Color.fromRGBO(193, 53, 132, 1),
@@ -388,6 +407,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
   Widget _itemOfPost(Post post) {
     return GestureDetector(
         onLongPress: (){
+          _actionRemovePost(post);
         },
         child: Container(
           margin: EdgeInsets.all(5),
@@ -398,6 +418,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                   width: double.infinity,
                   imageUrl: post.img_post,
                   placeholder: (context, url) => Center(child: CircularProgressIndicator(),),
+                  errorWidget: (context, url, error) => Icon(Icons.error),
                   fit: BoxFit.cover,
                 ),
               ),

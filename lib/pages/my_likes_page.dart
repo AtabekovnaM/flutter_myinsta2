@@ -41,6 +41,17 @@ class _MyLikesPageState extends State<MyLikesPage> {
     });
   }
 
+  _actionRemovePost (Post post) async{
+    var result = await Utils.dialogCommon(context, "Insta Clone", "Do you want to remove this post?", false);
+    if(result != null && result){
+      setState(() {
+        isLoading = true;
+      });
+      DataService.removePost(post).then((value) => {
+        _apiLoadLikes(),
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -135,7 +146,7 @@ class _MyLikesPageState extends State<MyLikesPage> {
                 IconButton(
                   icon: Icon(SimpleLineIcons.options),
                   onPressed: () {
-
+                    _actionRemovePost(post);
                   },
                 ): SizedBox.shrink(),
               ],
